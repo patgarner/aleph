@@ -90,8 +90,8 @@ static filter_1p_lo inSlew[4];
 static fract32 outBus = 0;
 
 // distortion
-static fract32 mix;// = float_to_fr32(1.0f);
-static fract32 gain;// = float_to_fr32(20.0f);
+static fract32 mix;
+static fract32 gain;
 static u8 type = 0;
 
 //-----------------
@@ -158,6 +158,7 @@ void module_init(void) {
 
   mix = float_to_fr32(1.0f);
   gain = float_to_fr32(50.0f);
+  type = 2;
 }
 
 // de-init (never actually used on blackfin, but maybe by emulator)
@@ -193,44 +194,39 @@ void module_process_frame(void) {
 
   // zero the output bus
   outBus = 0;
-  fract32 y0;
-  type = 2;
+  
+  fract32 distortionOut;
   switch (type)
   {
     case 0:
     {
       fract32 x0 = in[0];
       fract32 q0 = mult_fr1x32x32(x0, gain);
-
-      //fract32 b0 = _ld_div32(q0, abs_fr1x32(q0));
-      fract32 b0 = fract32div(q0, abs_fr1x32(q0));
-      fract32 z0 = mult_fr1x32x32(b0, 
+      fract32 z0 = mult_fr1x32x32(fract32div(q0, abs_fr1x32(q0)), 
                                   sub_fr1x32(float_to_fr32(1.0f), fract32exp(negate_fr1x32(abs_fr1x32(q0)))));
-      y0 = add_fr1x32(mult_fr1x32x32(mix, z0), mult_fr1x32x32(sub_fr1x32(float_to_fr32(1.0f), mix), x0)); 
+      distortionOut = add_fr1x32(mult_fr1x32x32(mix, z0), mult_fr1x32x32(sub_fr1x32(float_to_fr32(1.0f), mix), x0)); 
  
-      //out[0] = y0;
-      //out[1] = y0;
       break;
     }
     case 1:
     {
-      float x0 = fr32_to_float(in[0]);
-      float y0 = 0.0;
-      if (x0 > 0 && x0 < (1.0/3.0))
+      float x = fr32_to_float(in[0]);
+      float y = 0.0;
+      if (x > 0 && x < (1.0/3.0))
       {
-         y0 = 2.0 * x0;
+         y = 2.0 * x;
       }
-      else if (x0 > (1.0/3.0) && x0 < (2.0/3.0))
+      else if (x > (1.0/3.0) && x < (2.0/3.0))
       {
-         y0 = (3.0-((2.0-(3.0 * x0)) * (2.0-(3.0 * x0))))/3.0;
+         y = (3.0-((2.0-(3.0 * x)) * (2.0-(3.0 * x))))/3.0;
       }
-      else if (x0 > (2.0/3.0) && x0 < 1)
+      else if (x > (2.0/3.0) && x < 1)
       {
-         y0 = 1.0; 
+         y = 1.0; 
       }
-      
-      out[0] = float_to_fr32(y0);
-      out[1] = float_to_fr32(y0);
+
+      distortionOut = float_to_fr32(y);      
+
       break;
     }
     case 2:
@@ -240,7 +236,7 @@ void module_process_frame(void) {
     	float z = (q/fabs(q)) * (1 - exp(-fabs(q)));
     	float m = 1.0f;
     	float y = (m * z) + ((1.0f - m) * x);
-    	y0 = float_to_fr32(y);
+    	distortionOut = float_to_fr32(y);
     	break;
     }
   }
@@ -250,7 +246,7 @@ void module_process_frame(void) {
   // these are fast saturating multiplies/adds for 32bit signed fractions.
   // there are also intrinsics for fr16, mixed modes, and conversions.
   // see http://blackfin.uclinux.org/doku.php?id=toolchain:built-in_functions
-  outBus = add_fr1x32( outBus, mult_fr1x32x32(y0, inVal[0]) );
+  outBus = add_fr1x32( outBus, mult_fr1x32x32(distortionOut, inVal[0]) );
   outBus = add_fr1x32( outBus, mult_fr1x32x32(in[1], inVal[1]) );
   outBus = add_fr1x32( outBus, mult_fr1x32x32(in[2], inVal[2]) );
   outBus = add_fr1x32( outBus, mult_fr1x32x32(in[3], inVal[3]) );
@@ -262,7 +258,7 @@ void module_process_frame(void) {
   out[3] = outBus;
 
   // upate cv outputs
-  //process_cv();
+  process_cv();
 }
 
 
@@ -327,13 +323,16 @@ void module_set_param(u32 idx, ParamValue v) {
     break;
 
    // distortion
-   case eParam_gain:
-     gain = v;
-     break;
-   case eParam_mix:
-     mix = v;
-     break;
-
+  case eParam_gain:
+    gain = v;
+    break;
+  case eParam_mix:
+    mix = v;
+    break;
+  case eParam_type:
+    type = v;
+    break;
+ 
   default:
     break;
   }

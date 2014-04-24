@@ -9,6 +9,10 @@
 #define PARAM_CV_MAX 	0x7fffffff
 #define PARAM_SLEW_MAX 	0x7fffffff
 
+#define PARAM_GAIN_MAX	0x00000064
+#define PARAM_MIX_MAX	0x00000001
+#define PARAM_TYPE_MAX	0x00000003
+
 // enumerate parameters
 // the order defined here must be matched in the descriptor !
 enum params {
@@ -35,6 +39,7 @@ enum params {
   // distortion values
   eParam_gain,
   eParam_mix,
+  eParam_type,
 
   eParamNumParams
 };

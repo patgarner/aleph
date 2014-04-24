@@ -134,16 +134,22 @@ extern void fill_param_desc(ParamDesc* desc) {
 
   // distortion
 
-  strcpy(desc[eParam_mix].label, "mix");
-  desc[eParam_mix].type = eParamTypeFix; 
-  desc[eParam_mix].min = 0; 
-  desc[eParam_mix].max = PARAM_AMP_MAX;
-  desc[eParam_mix].radix = 2;
-  
   strcpy(desc[eParam_gain].label, "gain");
   desc[eParam_gain].type = eParamTypeShort;
   desc[eParam_gain].min = 0x00000000;
-  desc[eParam_gain].max = 0x00000064;
+  desc[eParam_gain].max = PARAM_GAIN_MAX;
+  desc[eParam_gain].radix = 16;
+
+  strcpy(desc[eParam_mix].label, "mix");
+  desc[eParam_mix].type = eParamTypeFix; 
+  desc[eParam_mix].min = 0; 
+  desc[eParam_mix].max = PARAM_MIX_MAX;
+  desc[eParam_mix].radix = 2;
+
+  strcpy(desc[eParam_gain].label, "type");
+  desc[eParam_gain].type = eParamTypeShort;
+  desc[eParam_gain].min = 0x00000000;
+  desc[eParam_gain].max = PARAM_TYPE_MAX;
   desc[eParam_gain].radix = 16;
 }
 
